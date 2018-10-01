@@ -1,3 +1,5 @@
+package server;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -7,11 +9,6 @@ import java.net.Socket;
 public class HandleConnectionThread extends Thread {
     
     ServerSocket svSocket = null;
-    private ConnectedClients connectedClients = null;
-    
-    public HandleConnectionThread(ConnectedClients connectedClients) {
-        this.connectedClients = connectedClients;
-    }
     
     void stopListening() {
         try {
@@ -31,7 +28,7 @@ public class HandleConnectionThread extends Thread {
                 try {
                     Socket clSocket = svSocket.accept();
                     ClientSocket clientSocket = new ClientSocket(clSocket);
-                    connectedClients.addClient(clientSocket);
+                    ConnectedClients.addClient(clientSocket);
                 } catch (IOException exq) {
                     System.out.println(" ServerMain: " + exq.getMessage());
                 }

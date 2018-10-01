@@ -1,3 +1,5 @@
+package server;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -5,7 +7,6 @@ import java.awt.event.ActionListener;
 
 public class GuiFrame extends JFrame {
     private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    private ConnectedClients connectedClients = null;
     private JPanel mainPanel = null;
     private JPanel upperPanel = null;
     private JPanel middlePanel = null;
@@ -18,9 +19,8 @@ public class GuiFrame extends JFrame {
     private JButton addClientBtn = null;
     private JList<String> connectedIpsJList = null;
     
-    public GuiFrame(String title, ConnectedClients connectedClients) {
+    public GuiFrame(String title) {
         super(title);
-        this.connectedClients = connectedClients;
         mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
         mainPanel.setPreferredSize(new Dimension(768, 630));
@@ -62,8 +62,8 @@ public class GuiFrame extends JFrame {
         addClientBtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String newText = randomAlphaNumeric(16);
-                int indexToInsert = connectedClients.getListModel().size();
-                connectedClients.getListModel().insertElementAt(newText, indexToInsert);
+                int indexToInsert = ConnectedClients.getListModel().size();
+                ConnectedClients.getListModel().insertElementAt(newText, indexToInsert);
                 connectedIpsJList.setSelectedIndex(indexToInsert);
                 connectedIpsJList.ensureIndexIsVisible(indexToInsert);
             }
@@ -80,7 +80,7 @@ public class GuiFrame extends JFrame {
     }
     
     public void addContentToLowerPane() {
-        connectedIpsJList = new JList<>(connectedClients.getListModel());
+        connectedIpsJList = new JList<>(ConnectedClients.getListModel());
         middlePanel.add(new JScrollPane(connectedIpsJList));
     }
     
