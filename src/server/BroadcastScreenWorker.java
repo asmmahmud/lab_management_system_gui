@@ -2,18 +2,18 @@ package server;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BroadcastScreenWorker implements Runnable {
+public class BroadcastScreenManager  {
     private ConnectedClients connectedClients = null;
-    private boolean removeClient;
+ 
+    private boolean shouldContinue = true;
     
-    public BroadcastScreenWorker(ConnectedClients connectedClients) {
+    public BroadcastScreenManager(ConnectedClients connectedClients) {
         this.connectedClients = connectedClients;
     }
-    
-    @Override
+ 
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
-            removeClient = false;
+        while (shouldContinue) {
+ 
             ConcurrentHashMap<String, ClientSocket> clientSockets = connectedClients.getClientSockets();
         }
     }
