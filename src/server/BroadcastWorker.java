@@ -15,12 +15,14 @@ public class BroadcastWorker implements Runnable {
     
     private final int COMPRESSION_QUALITY = 40;
     
+    private final MainGuiFrame mainGuiFrame;
     private Robot robot = null;
     private byte[] imageByteArray = new byte[0];
     private boolean continueBroadcast = true;
     
-    public BroadcastWorker() throws AWTException {
+    public BroadcastWorker(MainGuiFrame mainGuiFrame) throws AWTException {
         robot = new Robot();
+        this.mainGuiFrame = mainGuiFrame;
     }
     
     @Override
@@ -62,6 +64,7 @@ public class BroadcastWorker implements Runnable {
             }
         }
         System.out.println("Exiting BroadcastWorker Thread....");
+        this.mainGuiFrame.manageBtnForQuitScreenBroadcast();
     }
     
     public void stopBroadcast() {

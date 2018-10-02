@@ -14,7 +14,7 @@ public class MainGuiFrame extends JFrame {
     
     private JButton screenBroadcastBtn = null;
     private JButton quitScreenBroadcastBtn = null;
-
+    
     private JButton clientScreenBtn = null;
     private JButton quitClientScreenBtn = null;
     private JList<String> connectedIpsJList = null;
@@ -78,7 +78,7 @@ public class MainGuiFrame extends JFrame {
         screenBroadcastBtn = new JButton("Screen Broadcast");
         screenBroadcastBtn.addActionListener(e -> {
             try {
-                broadcastWorkerThread = new Thread(new BroadcastWorker());
+                broadcastWorkerThread = new Thread(new BroadcastWorker(this));
                 broadcastWorkerThread.setName("broadcastWorkerThread");
                 broadcastWorkerThread.start();
                 // manage button states
@@ -95,12 +95,7 @@ public class MainGuiFrame extends JFrame {
             if (broadcastWorkerThread != null && broadcastWorkerThread.isAlive()) {
                 broadcastWorkerThread.interrupt();
             }
-            // manage button states
-            quitScreenBroadcastBtn.setEnabled(false);
-            screenBroadcastBtn.setEnabled(true);
-            clientScreenBtn.setEnabled(true);
         });
-        
         upperPanel.add(screenBroadcastBtn);
         upperPanel.add(quitScreenBroadcastBtn);
     }
@@ -110,12 +105,9 @@ public class MainGuiFrame extends JFrame {
         middlePanel.add(new JScrollPane(connectedIpsJList));
     }
     
-    public static String randomAlphaNumeric(int count) {
-        StringBuilder builder = new StringBuilder();
-        while (count-- != 0) {
-            int character = (int) (Math.random() * ALPHA_NUMERIC_STRING.length());
-            builder.append(ALPHA_NUMERIC_STRING.charAt(character));
-        }
-        return builder.toString();
+    public void manageBtnForQuitScreenBroadcast() {
+        quitScreenBroadcastBtn.setEnabled(false);
+        screenBroadcastBtn.setEnabled(true);
+        clientScreenBtn.setEnabled(true);
     }
 }

@@ -13,7 +13,6 @@ public class ConnectedClients {
     public static void addClient(ClientSocket clientSocket) {
         if (clientSocket != null) {
             clientSockets.putIfAbsent(clientSocket.getIp(), clientSocket);
-//            clientSockets.put(clientSocket.getIp(), clientSocket);
             int indexToInsert = listModel.size();
             listModel.insertElementAt(clientSocket.getIp(), indexToInsert);
         }
@@ -27,6 +26,14 @@ public class ConnectedClients {
         return clientSockets;
     }
     
+    public static void removeClient(ClientSocket clientSocket) {
+        clientSockets.remove(clientSocket.getIp());
+        listModel.removeElement(clientSocket.getIp());
+    }
+    
+    public static ClientSocket getClientSocketByKey(String key) {
+        return clientSockets.get(key);
+    }
     public static String[] getIps() {
         Iterator<String> iterator = clientSockets.keySet().iterator();
         String[] allIps = new String[0];

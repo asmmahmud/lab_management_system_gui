@@ -7,10 +7,10 @@ import java.net.Socket;
 
 public class ClientSocket {
     private String ip;
-    private Socket socket;
+    private final Socket socket;
     private String name;
-    private ObjectInputStream clientInStream;
-    private ObjectOutputStream clientOutStream;
+    private final ObjectInputStream clientInStream;
+    private final ObjectOutputStream clientOutStream;
     
     public ClientSocket(Socket socket) throws IOException {
         this.socket = socket;
@@ -29,13 +29,19 @@ public class ClientSocket {
     }
     
     public void sendPacket(Packet packet) throws IOException {
-        clientOutStream.writeObject(packet);
-        clientOutStream.flush();
-        clientOutStream.reset();
+        synchronized (clientOutStream) {
+            clientOutStream.writeObject(packet);
+            clientOutStream.flush();
+            clientOutStream.reset();
+        }
     }
     
     public Packet receivePacket() throws ClassNotFoundException, IOException {
-        return (Packet) clientInStream.readObject();
+        Packet packet = null;
+        synchronized (clientInStream) {
+            packet = (Packet) clientInStream.readObject();
+        }
+        return packet;
     }
     
     public String getName() {
@@ -60,9 +66,11 @@ public class ClientSocket {
     
     public void close() {
         try {
-            clientOutStream.close();
-            clientInStream.close();
-            socket.close();
+            synchronized (socket) {
+                clientOutStream.close();
+                clientInStream.close();
+                socket.close();
+            }
         } catch (IOException exc) {
             System.err.println(exc.getMessage());
         }
