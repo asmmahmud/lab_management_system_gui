@@ -8,11 +8,12 @@ public class MainWin {
     
     public static void main(String[] args) {
         handleConnection = new HandleConnectionThread();
+        handleConnection.setName("handleConnection");
         handleConnection.start();
         EventQueue.invokeLater(new Runnable() {
             public void run() {
                 try {
-                    new GuiFrame("Lab Management System");
+                    new MainGuiFrame("Lab Management System");
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

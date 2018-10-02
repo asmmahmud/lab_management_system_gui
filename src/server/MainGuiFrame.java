@@ -2,10 +2,10 @@ package server;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-public class GuiFrame extends JFrame {
+public class MainGuiFrame extends JFrame {
+    
+    private Thread broadcastWorkerThread = null;
     private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private JPanel mainPanel = null;
     private JPanel upperPanel = null;
@@ -14,21 +14,21 @@ public class GuiFrame extends JFrame {
     
     private JButton screenBroadcastBtn = null;
     private JButton quitScreenBroadcastBtn = null;
-    private JButton refreshBtn = null;
+
     private JButton clientScreenBtn = null;
-    private JButton addClientBtn = null;
+    private JButton quitClientScreenBtn = null;
     private JList<String> connectedIpsJList = null;
     
-    public GuiFrame(String title) {
+    public MainGuiFrame(String title) {
         super(title);
         mainPanel = new JPanel();
         mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
-        mainPanel.setPreferredSize(new Dimension(768, 630));
+        mainPanel.setPreferredSize(new Dimension(512, 500));
         createUpperPanel();
         createMiddlePanel();
         createLowerPanel();
         getContentPane().add(mainPanel);
-        setSize(768, 600);
+        setSize(512, 500);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
         setVisible(true);
@@ -55,28 +55,54 @@ public class GuiFrame extends JFrame {
         lowerPanel.setPreferredSize(new Dimension(768, 50));
         lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.X_AXIS));
         clientScreenBtn = new JButton("Monitor Screen");
-        lowerPanel.add(clientScreenBtn);
-        addClientBtn = new JButton("Add Client");
-        lowerPanel.add(addClientBtn);
-        mainPanel.add(lowerPanel);
-        addClientBtn.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String newText = randomAlphaNumeric(16);
-                int indexToInsert = ConnectedClients.getListModel().size();
-                ConnectedClients.getListModel().insertElementAt(newText, indexToInsert);
-                connectedIpsJList.setSelectedIndex(indexToInsert);
-                connectedIpsJList.ensureIndexIsVisible(indexToInsert);
-            }
+        clientScreenBtn.addActionListener(e -> {
+            // manage button states
+            screenBroadcastBtn.setEnabled(false);
+            clientScreenBtn.setEnabled(false);
+            quitClientScreenBtn.setEnabled(true);
         });
+        lowerPanel.add(clientScreenBtn);
+        quitClientScreenBtn = new JButton("Quit Monitoring Screen");
+        quitClientScreenBtn.setEnabled(false);
+        quitClientScreenBtn.addActionListener(e -> {
+            // manage button states
+            screenBroadcastBtn.setEnabled(true);
+            clientScreenBtn.setEnabled(true);
+            quitClientScreenBtn.setEnabled(false);
+        });
+        lowerPanel.add(quitClientScreenBtn);
+        mainPanel.add(lowerPanel);
     }
     
     public void addBtnsToUpperPane() {
         screenBroadcastBtn = new JButton("Screen Broadcast");
+        screenBroadcastBtn.addActionListener(e -> {
+            try {
+                broadcastWorkerThread = new Thread(new BroadcastWorker());
+                broadcastWorkerThread.setName("broadcastWorkerThread");
+                broadcastWorkerThread.start();
+                // manage button states
+                screenBroadcastBtn.setEnabled(false);
+                quitScreenBroadcastBtn.setEnabled(true);
+                clientScreenBtn.setEnabled(false);
+            } catch (AWTException awtEx) {
+                System.err.println("Exception in Screen Broadcast: " + awtEx.getMessage());
+            }
+        });
         quitScreenBroadcastBtn = new JButton("Quit Screen Broadcast");
-        refreshBtn = new JButton("Refresh");
+        quitScreenBroadcastBtn.setEnabled(false);
+        quitScreenBroadcastBtn.addActionListener(e -> {
+            if (broadcastWorkerThread != null && broadcastWorkerThread.isAlive()) {
+                broadcastWorkerThread.interrupt();
+            }
+            // manage button states
+            quitScreenBroadcastBtn.setEnabled(false);
+            screenBroadcastBtn.setEnabled(true);
+            clientScreenBtn.setEnabled(true);
+        });
+        
         upperPanel.add(screenBroadcastBtn);
         upperPanel.add(quitScreenBroadcastBtn);
-        upperPanel.add(refreshBtn);
     }
     
     public void addContentToLowerPane() {
