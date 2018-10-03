@@ -2,10 +2,12 @@ package server;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class MainGuiFrame extends JFrame {
     
     private Thread broadcastWorkerThread = null;
+    private ClientScreenWorker clientScreenThread = null;
     private static final String ALPHA_NUMERIC_STRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private JPanel mainPanel = null;
     private JPanel upperPanel = null;
@@ -46,7 +48,7 @@ public class MainGuiFrame extends JFrame {
         middlePanel = new JPanel();
         middlePanel.setPreferredSize(new Dimension(768, 500));
         middlePanel.setLayout(new BoxLayout(middlePanel, BoxLayout.Y_AXIS));
-        addContentToLowerPane();
+        addContentToMiddlePane();
         mainPanel.add(middlePanel);
     }
     
@@ -56,19 +58,28 @@ public class MainGuiFrame extends JFrame {
         lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.X_AXIS));
         clientScreenBtn = new JButton("Monitor Screen");
         clientScreenBtn.addActionListener(e -> {
+            String selectedIp = connectedIpsJList.getSelectedValue();
+            System.out.println("selected client ip: " + selectedIp);
+            if (selectedIp != null) {
+                try {
+                    clientScreenThread = new ClientScreenWorker(selectedIp, this);
+                    clientScreenThread.start();
+                    screenBroadcastBtn.setEnabled(false);
+                    clientScreenBtn.setEnabled(false);
+                    quitClientScreenBtn.setEnabled(true);
+                } catch (IOException ex) {
+                }
+            }
             // manage button states
-            screenBroadcastBtn.setEnabled(false);
-            clientScreenBtn.setEnabled(false);
-            quitClientScreenBtn.setEnabled(true);
         });
         lowerPanel.add(clientScreenBtn);
         quitClientScreenBtn = new JButton("Quit Monitoring Screen");
         quitClientScreenBtn.setEnabled(false);
         quitClientScreenBtn.addActionListener(e -> {
+            if (clientScreenThread != null && clientScreenThread.isAlive()) {
+                clientScreenThread.stopIt();
+            }
             // manage button states
-            screenBroadcastBtn.setEnabled(true);
-            clientScreenBtn.setEnabled(true);
-            quitClientScreenBtn.setEnabled(false);
         });
         lowerPanel.add(quitClientScreenBtn);
         mainPanel.add(lowerPanel);
@@ -100,7 +111,7 @@ public class MainGuiFrame extends JFrame {
         upperPanel.add(quitScreenBroadcastBtn);
     }
     
-    public void addContentToLowerPane() {
+    public void addContentToMiddlePane() {
         connectedIpsJList = new JList<>(ConnectedClients.getListModel());
         middlePanel.add(new JScrollPane(connectedIpsJList));
     }
@@ -109,5 +120,11 @@ public class MainGuiFrame extends JFrame {
         quitScreenBroadcastBtn.setEnabled(false);
         screenBroadcastBtn.setEnabled(true);
         clientScreenBtn.setEnabled(true);
+    }
+    
+    public void manageBtnForQuitClientScreen() {
+        screenBroadcastBtn.setEnabled(true);
+        clientScreenBtn.setEnabled(true);
+        quitClientScreenBtn.setEnabled(false);
     }
 }

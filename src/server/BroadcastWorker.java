@@ -52,6 +52,7 @@ public class BroadcastWorker implements Runnable {
                         packet.setCommand(GlobalCommand.QUIT_BROADCAST_SCREEN);
                         clientSocket.sendPacket(packet);
                         continueBroadcast = false;
+                        System.out.println("Quiting broadcast on " + clientSocket.getIp());
                         continue;
                     }
                     packet.setScreenData(imageByteArray, MouseInfo.getPointerInfo().getLocation());

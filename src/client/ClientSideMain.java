@@ -10,14 +10,14 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.UnknownHostException;
 
 public class ClientSideMain {
-    private static final int COMPRESSION_QUALITY = 40;
-    private static ClientSocket clientSocket = null;
+    static volatile int currentCommand = GlobalCommand.NO_ACTION;
+    static final int COMPRESSION_QUALITY = 40;
+    static ClientSocket clientSocket = null;
     private static ScreenShareWin winFrame = null;
-    private static Packet currentCommand = new Packet(0);
     private static boolean continueHandling = true;
+    private static Thread screenShareWorkerThread = null;
     
     public static void main(String[] args) {
         String host = "192.168.10.234";
@@ -29,10 +29,8 @@ public class ClientSideMain {
                 clientSocket = new ClientSocket(socket);
                 System.out.println("Connection with the server established.");
                 handleConnection();
-            } catch (UnknownHostException e) {
-//                System.err.println("UnknownHostException: (main): ");
             } catch (IOException e) {
-//                System.err.println("IOException: (main): " + e.getMessage());
+//                System.err.println("UnknownHostException: (main): ");
             } catch (Exception e) {
                 shouldContinue = false;
                 System.err.println("Exception: (main): " + e.getMessage());
@@ -48,13 +46,11 @@ public class ClientSideMain {
                 if (receivedPacket == null) {
                     continue;
                 }
-                if (currentCommand.getCommand() != receivedPacket.getCommand()) {
+                if (currentCommand != receivedPacket.getCommand()) {
                     initiateNewCommand(receivedPacket);
                 }
-                if (receivedPacket.getCommand() == GlobalCommand.BROADCAST_SCREEN) {
+                if (currentCommand == GlobalCommand.BROADCAST_SCREEN) {
                     receivedScreen(receivedPacket);
-                } else if (receivedPacket.getCommand() == GlobalCommand.CLIENT_SCREEN) {
-                    sendScreen();
                 }
             }
         } catch (ClassNotFoundException e) {
@@ -65,39 +61,6 @@ public class ClientSideMain {
             System.out.println("Exception: (handleConnection): " + e.getMessage());
         } finally {
             clientSocket.close();
-        }
-    }
-    
-    private static void sendScreen() {
-        Robot robot;
-        byte[] imageByteArray;
-        Rectangle screenRectangle = new Rectangle(Toolkit.getDefaultToolkit().getScreenSize());
-        try {
-            robot = new Robot();
-        } catch (AWTException awtEx) {
-            System.out.println("AWTException: (sendScreen): " + awtEx.getMessage());
-            return;
-        }
-        boolean continueSending = true;
-        while (continueSending && currentCommand.getCommand() == GlobalCommand.CLIENT_SCREEN) {
-            try {
-                BufferedImage image = robot.createScreenCapture(screenRectangle);
-                imageByteArray = Utils.bufferedImageToByteArray(image, "JPG", COMPRESSION_QUALITY);
-            } catch (IOException ioEx) {
-                System.err.println("IOException on sendScreen: " + ioEx.getMessage());
-                break;
-            } catch (IllegalStateException eSEx) {
-                System.err.println("IllegalStateException on sendScreen: " + eSEx.getMessage());
-                break;
-            }
-            try {
-                Packet packet = new Packet(GlobalCommand.CLIENT_SCREEN);
-                packet.setScreenData(imageByteArray, MouseInfo.getPointerInfo().getLocation());
-                clientSocket.sendPacket(packet);
-            } catch (IOException exc) {
-                System.err.println("IOException BroadcastWorker (in while): " + exc.getMessage());
-                clientSocket.close();
-            }
         }
     }
     
@@ -116,13 +79,18 @@ public class ClientSideMain {
         }
     }
     
-    private static void initiateNewCommand(Packet newCommand) {
-        currentCommand = newCommand;
-        if (newCommand.getCommand() == GlobalCommand.BROADCAST_SCREEN) {
+    private static void initiateNewCommand(Packet newPacket) {
+        currentCommand = newPacket.getCommand();
+        if (currentCommand == GlobalCommand.BROADCAST_SCREEN) {
             winFrame = new ScreenShareWin(510, 400);
-        } else if (newCommand.getCommand() == GlobalCommand.QUIT_BROADCAST_SCREEN) {
+        } else if (currentCommand == GlobalCommand.QUIT_BROADCAST_SCREEN) {
             winFrame.closeWindow();
+        } else if (currentCommand == GlobalCommand.CLIENT_SCREEN) {
+            if (screenShareWorkerThread == null || !screenShareWorkerThread.isAlive()) {
+                screenShareWorkerThread = new Thread(new ScreenShareWorker());
+                screenShareWorkerThread.start();
+            }
         }
-        System.out.println("New command received: " + newCommand.getCommand());
+        System.out.println("New command received: " + currentCommand);
     }
 }
